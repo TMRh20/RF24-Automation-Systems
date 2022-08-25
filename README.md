@@ -17,7 +17,9 @@ See https://tmrautomation.myshopify.com/
 5. If that doesn't work, your router might not support hostnames. You can get the IP address of the RPi by running `ifconfig` from the command line: ![IpAddress](https://user-images.githubusercontent.com/2610460/186565512-7b64d693-6d2c-436c-b27a-18ea89091427.jpg)
 
 6. Once the IP address has been identified, you can connect via http://your-IP-here:1880/ui
-7. The RPi Node-Red interface will display the current temperature and humidity on a chart.
+7. The RPi Node-Red interface will display the current temperature and humidity on a chart: ![Temp Humidity](https://user-images.githubusercontent.com/2610460/186566156-c216e617-96fa-4550-bf92-21a3446b6abe.jpg)
+
 8. The RGB LED can be adjusted, both color and brightness by clicking on a color palette and moving a slider for brightness
+![colorPallette](https://user-images.githubusercontent.com/2610460/186566487-856d1504-bb1c-401a-9613-204de499fc32.jpg)
 
 
