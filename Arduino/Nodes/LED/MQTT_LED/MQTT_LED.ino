@@ -44,7 +44,8 @@ IPAddress server(10, 10, 2, 2);   //The ip of the MQTT server
 int r=0,g=0,b=0;
 
 char clientID[] = { "arduinoClient   " };
-
+uint32_t connectedTimer = 0;
+char lastTopic = 'a';
 
 void changePixels(){
 
@@ -107,7 +108,10 @@ void messageReceived(MQTTClient* client, char topic[], char payload[], int lengt
   Serial.print(" B ");
   Serial.println(b);
 
-  changePixels();
+  if( (millis() - connectedTimer < 2000 && topic[3] == lastTopic) || millis() - connectedTimer > 3000){
+    changePixels(); 
+    lastTopic = topic[3];
+  }
   
 }
 
@@ -129,7 +133,7 @@ void connect() {
       Ethernet.update();
     }
   }
-
+  connectedTimer = millis();
   Serial.println("\nconnected!");
   client.subscribe("ledall", 2);
   client.subscribe("led25", 2);
