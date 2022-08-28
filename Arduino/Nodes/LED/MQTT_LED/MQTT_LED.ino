@@ -132,6 +132,7 @@ void connect() {
 
   Serial.println("\nconnected!");
   client.subscribe("led25", 2);
+  client.subscribe("ledall", 2);
 }
 
 void setup() {
