@@ -108,7 +108,7 @@ void messageReceived(MQTTClient* client, char topic[], char payload[], int lengt
   Serial.print(" B ");
   Serial.println(b);
 
-  if( (millis() - connectedTimer < 2000 && topic[3] == lastTopic) || millis() - connectedTimer > 3000){
+  if( (millis() - connectedTimer < 2000 && topic[3] == lastTopic) || millis() - connectedTimer > 2000){
     changePixels(); 
     lastTopic = topic[3];
   }
