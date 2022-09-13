@@ -26,6 +26,7 @@
 #include <RF24Ethernet.h>
 #include <MQTT.h>
 #include <Adafruit_NeoPixel.h>
+#include <printf.h>
 
 RF24 radio(7, 8);
 RF24Network network(radio);
@@ -33,7 +34,8 @@ RF24Mesh mesh(radio, network);
 RF24EthernetClass RF24Ethernet(radio, network, mesh);
 
 #define LEDPIN 5
-#define NUMPIXELS 1
+#define PIRPIN 4
+#define NUMPIXELS 3
 #define DELAYVAL 500
 Adafruit_NeoPixel pixels(NUMPIXELS, LEDPIN, NEO_GRB + NEO_KHZ800);
 
@@ -41,19 +43,22 @@ IPAddress ip(10, 10, 2, 25);
 IPAddress gateway(10, 10, 2, 2);  //Specify the gateway in case different from the server
 IPAddress server(10, 10, 2, 2);   //The ip of the MQTT server
 
-int r=0,g=0,b=0;
+
+int r = 0, g = 0, b = 0;
+int r1 = 0, g1 = 0, b1 = 0;
+bool ledON = 0;
 
 char clientID[] = { "arduinoClient   " };
 uint32_t connectedTimer = 0;
-char lastTopic = 'a';
+char lastTopic = '2';
 
-void changePixels(){
+void changePixels() {
 
-    pixels.clear();
-    for(int i=0; i<NUMPIXELS; i++) {
-      pixels.setPixelColor(i, pixels.Color(r,g,b));
-    }
-    pixels.show();
+  pixels.clear();
+  for (int i = 0; i < NUMPIXELS; i++) {
+    pixels.setPixelColor(i, pixels.Color(r1, g1, b1));
+  }
+  pixels.show();
 }
 
 void messageReceived(MQTTClient* client, char topic[], char payload[], int length) {
@@ -65,35 +70,35 @@ void messageReceived(MQTTClient* client, char topic[], char payload[], int lengt
   char rgbBuffer[5];
 
   int i = 0;
-  Serial.println(payload);
-  for(i;i<length;i++){
-    if(isdigit(payload[i]) ){
+
+  for (i; i < length; i++) {
+    if (isdigit(payload[i]) ) {
       rgbBuffer[i] = payload[i];
-    }else{
+    } else {
       i++;
       break;
     }
   }
   r = atoi(rgbBuffer);
-  memset(rgbBuffer,0,5);
+  memset(rgbBuffer, 0, 5);
   int j = 0;
-  for(i; i<length;i++){
-    if(isdigit(payload[i]) ){
+  for (i; i < length; i++) {
+    if (isdigit(payload[i]) ) {
       rgbBuffer[j] = payload[i];
-    }else{
+    } else {
       i++;
       break;
     }
     j++;
   }
   g = atoi(rgbBuffer);
-  memset(rgbBuffer,0,5);
-  
+  memset(rgbBuffer, 0, 5);
+
   j = 0;
-  for(i ; i<length;i++){
-    if(isdigit(payload[i])){
+  for (i ; i < length; i++) {
+    if (isdigit(payload[i])) {
       rgbBuffer[j] = payload[i];
-    }else{
+    } else {
       break;
     }
     j++;
@@ -108,40 +113,35 @@ void messageReceived(MQTTClient* client, char topic[], char payload[], int lengt
   Serial.print(" B ");
   Serial.println(b);
 
-  if( (millis() - connectedTimer < 2000 && topic[3] == lastTopic) || millis() - connectedTimer > 2000){
-    changePixels(); 
+  if ( (millis() - connectedTimer < 2000 && topic[3] == lastTopic) || millis() - connectedTimer > 2000) {
+    r1 = r; g1 = g; b1 = b;
     lastTopic = topic[3];
+    if (ledON) {
+      changePixels();
+    }
   }
-  
+
 }
 
 EthernetClient ethClient;
 MQTTClient client;
 
 void connect() {
-  Serial.print("connecting...");
+  Serial.println("connecting...");
   uint32_t clTimeout = millis();
-  while (!client.connect(clientID)) {
-    Serial.print(".");
-    if (millis() - clTimeout > 5001) {
-      Serial.println();
-      return;
-    }
-    uint32_t timer = millis();
-    //Instead of delay, keep the RF24 stack updating
-    while (millis() - timer < 1000) {
-      Ethernet.update();
-    }
+  if (!client.connect(clientID)) {
+    return;
   }
-  connectedTimer = millis();
   Serial.println("\nconnected!");
   client.subscribe("ledall", 2);
   client.subscribe("led25", 2);
 }
 
+uint32_t pixelTimer = 0;
+
 void setup() {
   Serial.begin(115200);
-
+  printf_begin();
   Ethernet.begin(ip, gateway);
 
   if (mesh.begin()) {
@@ -150,6 +150,7 @@ void setup() {
     Serial.println(" Failed");
   }
 
+  radio.printDetails();
   //Convert the last octet of the IP address to an identifier used
   char str[4];
   int test = ip[3];
@@ -157,8 +158,10 @@ void setup() {
   memcpy(&clientID[13], &str, strlen(str));
   Serial.println(clientID);
 
+  pinMode(PIRPIN, INPUT);
+
   pixels.begin();
-  
+
   client.begin(server, ethClient);
   client.onMessageAdvanced(messageReceived);
 }
@@ -184,4 +187,19 @@ void loop() {
 
   client.loop();
 
+  if (digitalRead(PIRPIN)) {
+    if (!ledON) {
+      changePixels();
+    }
+    ledON = 1;
+    pixelTimer = millis();
+  } else if (millis() - pixelTimer > 300000) {
+    ledON = 0;
+    pixels.clear();
+    for (int i = 0; i < NUMPIXELS; i++) {
+      pixels.setPixelColor(i, pixels.Color(0, 0, 0));
+    }
+    pixels.show();
+
+  }
 }
