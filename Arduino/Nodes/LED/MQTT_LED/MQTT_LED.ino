@@ -35,7 +35,7 @@ RF24EthernetClass RF24Ethernet(radio, network, mesh);
 
 #define LEDPIN 5
 #define PIRPIN 4
-#define NUMPIXELS 3
+#define NUMPIXELS 7
 #define DELAYVAL 500
 Adafruit_NeoPixel pixels(NUMPIXELS, LEDPIN, NEO_GRB + NEO_KHZ800);
 
@@ -128,7 +128,6 @@ MQTTClient client;
 
 void connect() {
   Serial.println("connecting...");
-  uint32_t clTimeout = millis();
   if (!client.connect(clientID)) {
     return;
   }
@@ -141,6 +140,7 @@ uint32_t pixelTimer = 0;
 
 void setup() {
   Serial.begin(115200);
+
   printf_begin();
   Ethernet.begin(ip, gateway);
 
@@ -168,6 +168,7 @@ void setup() {
 
 uint32_t mesh_timer = 0;
 uint32_t pub_timer = 0;
+uint32_t connectTimer = 0;
 
 void loop() {
   Ethernet.update();
@@ -181,7 +182,9 @@ void loop() {
     }
     Serial.println();
   }
-  if (!client.connected()) {
+
+  if (!client.connected() && millis() - connectTimer > 1000) {
+    connectTimer = millis();
     connect();
   }
 
